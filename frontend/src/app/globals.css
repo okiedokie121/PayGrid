@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #0a0b0d;
+  --bg-surface: #131519;
+  --bg-surface-hover: #1a1d22;
+  --border-subtle: #22262c;
+  --accent-primary: #c9a15a;
+  --accent-secondary: #5b9df0;
+  --accent-success: #34d399;
+  --accent-warning: #f2994a;
+  --accent-danger: #ef5350;
+  --text-primary: #ffffff;
+  --text-secondary: #9a9ca3;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Tabular numbers for non-jittering digit updates */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom glow effects */
+.gold-glow {
+  box-shadow: 0 0 50px -10px rgba(201, 161, 90, 0.15);
+}
+
+.surface-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.surface-card:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: rgba(201, 161, 90, 0.25);
+}
