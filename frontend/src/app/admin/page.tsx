@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustlineNotice from "@/components/TrustlineNotice";
-import { getConnectedWallet, checkPayTrustline } from "@/lib/stellar";
+import {
+  getConnectedWallet,
+  checkPayTrustline,
+  getStoredTreasuryBalance,
+  addStoredTreasuryBalance,
+} from "@/lib/stellar";
 import { formatPayAmount } from "@/lib/math";
 import {
   Shield,
@@ -36,8 +41,12 @@ export default function AdminPanel() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);
 
-  const [treasuryBalance, setTreasuryBalance] = useState<bigint>(0n); // Starts at 0 PAY
+  const [treasuryBalance, setTreasuryBalance] = useState<bigint>(0n);
   const [employees, setEmployees] = useState<AdminEmployeeItem[]>([]);
+
+  const refreshTreasuryBalance = () => {
+    setTreasuryBalance(getStoredTreasuryBalance());
+  };
 
   useEffect(() => {
     getConnectedWallet().then((addr) => {
@@ -46,6 +55,7 @@ export default function AdminPanel() {
         checkPayTrustline(addr).then((ok) => setHasTrustline(ok));
       }
     });
+    refreshTreasuryBalance();
   }, []);
 
   const handleFundTreasury = async (e: React.FormEvent) => {
@@ -55,7 +65,8 @@ export default function AdminPanel() {
     try {
       await new Promise((r) => setTimeout(r, 1200));
       const addedStroops = BigInt(Math.floor(Number(fundAmount) * 10_000_000));
-      setTreasuryBalance((prev) => prev + addedStroops);
+      const updated = addStoredTreasuryBalance(addedStroops);
+      setTreasuryBalance(updated);
       setToast({
         msg: `Successfully funded Treasury with ${fundAmount} PAY!`,
         hash: "01271423859c27ad3b05697453a04ac64d0a0562624ca91039e3dcd4cd1eb333",

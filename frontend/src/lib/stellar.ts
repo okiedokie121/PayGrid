@@ -60,6 +60,14 @@ export async function fetchWalletBalances(walletAddress: string): Promise<{ xlm:
       }
     }
 
+    // Add locally swapped PAY tokens if stored in localStorage
+    if (typeof window !== "undefined" && walletAddress) {
+      const storedPay = localStorage.getItem(`paygrid_pay_bal_${walletAddress.toLowerCase()}`);
+      if (storedPay) {
+        rawPay += parseFloat(storedPay);
+      }
+    }
+
     const xlm = rawXlm.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 4,
@@ -74,6 +82,28 @@ export async function fetchWalletBalances(walletAddress: string): Promise<{ xlm:
     console.error("Failed to fetch wallet balances:", e);
     return { xlm: "0.00", pay: "0.00", rawXlm: 0, rawPay: 0 };
   }
+}
+
+export function getStoredTreasuryBalance(): bigint {
+  if (typeof window === "undefined") return 0n;
+  const val = localStorage.getItem("paygrid_treasury_balance_stroops");
+  return val ? BigInt(val) : 0n;
+}
+
+export function addStoredTreasuryBalance(stroops: bigint): bigint {
+  if (typeof window === "undefined") return 0n;
+  const current = getStoredTreasuryBalance();
+  const updated = current + stroops;
+  localStorage.setItem("paygrid_treasury_balance_stroops", updated.toString());
+  return updated;
+}
+
+export function addStoredUserPayBalance(walletAddress: string, amountPay: number) {
+  if (typeof window === "undefined" || !walletAddress) return;
+  const key = `paygrid_pay_bal_${walletAddress.toLowerCase()}`;
+  const current = parseFloat(localStorage.getItem(key) || "0");
+  const updated = current + amountPay;
+  localStorage.setItem(key, updated.toString());
 }
 
 export async function checkPayTrustline(walletAddress: string): Promise<boolean> {
@@ -135,7 +165,6 @@ export async function executeXlmToPaySwap(
   const server = new Horizon.Server("https://horizon-testnet.stellar.org");
   const account = await server.loadAccount(walletAddress);
 
-  // Send real XLM payment operation to Treasury issuer address on Stellar Testnet
   const tx = new TransactionBuilder(account, {
     fee: "10000",
     networkPassphrase: NETWORK_PASSPHRASE,

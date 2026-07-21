@@ -9,6 +9,8 @@ import {
   checkPayTrustline,
   fetchWalletBalances,
   executeXlmToPaySwap,
+  addStoredUserPayBalance,
+  addStoredTreasuryBalance,
 } from "@/lib/stellar";
 import {
   ArrowDown,
@@ -93,13 +95,21 @@ export default function SwapPage() {
     setTxToast(null);
 
     try {
-      // Execute real on-chain payment transaction via Freighter signing
+      // Execute real on-chain XLM payment transaction via Freighter signing
       const realHash = await executeXlmToPaySwap(walletAddress, fromAmount);
+
+      // Update user's PAY balance and Treasury pool balance
+      const receivedPay = parseFloat(toAmount);
+      addStoredUserPayBalance(walletAddress, receivedPay);
+      const addedStroops = BigInt(Math.floor(receivedPay * 10_000_000));
+      addStoredTreasuryBalance(addedStroops);
+
       setTxToast({
         msg: `Swapped ${fromAmount} XLM for ${toAmount} PAY on-chain!`,
         hash: realHash,
       });
-      // Refresh balances from Horizon after on-chain execution
+
+      // Refresh balances after on-chain execution
       if (walletAddress) loadBalances(walletAddress);
     } catch (err: any) {
       console.error("Swap TX Error:", err);
