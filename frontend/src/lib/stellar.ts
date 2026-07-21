@@ -103,9 +103,15 @@ export function removeStoredEmployee(id: number): StoredEmployee[] {
 
 export async function checkFreighterConnected(): Promise<boolean> {
   try {
+    if (typeof window !== "undefined" && (window as any).freighter) {
+      return true;
+    }
     if (typeof freighter.isConnected === "function") {
       const res = await freighter.isConnected();
-      return typeof res === "boolean" ? res : (res as any)?.isConnected || false;
+      if (typeof res === "boolean") return res;
+      if (res && typeof res === "object") {
+        return Boolean((res as any).isConnected);
+      }
     }
     return false;
   } catch (e) {
@@ -113,24 +119,88 @@ export async function checkFreighterConnected(): Promise<boolean> {
   }
 }
 
-export async function getConnectedWallet(): Promise<string | null> {
+export async function getConnectedWallet(promptUser = false): Promise<string | null> {
   try {
-    const connected = await checkFreighterConnected();
-    if (!connected) return null;
+    const isConnected = await checkFreighterConnected();
+    if (!isConnected) return null;
 
-    if (typeof (freighter as any).getAddress === "function") {
-      const res = await (freighter as any).getAddress();
-      if (typeof res === "string") return res;
-      if (res && typeof res.address === "string") return res.address;
+    // If promptUser is true, try requestAccess first to trigger the Freighter approval prompt
+    if (promptUser) {
+      if (typeof (freighter as any).requestAccess === "function") {
+        try {
+          const res = await (freighter as any).requestAccess();
+          if (typeof res === "string" && res.length > 0) return res;
+          if (res && typeof res.address === "string" && res.address.length > 0) {
+            return res.address;
+          }
+        } catch (e) {
+          console.warn("requestAccess error:", e);
+        }
+      }
+      if (typeof window !== "undefined" && (window as any).freighter?.requestAccess) {
+        try {
+          const res = await (window as any).freighter.requestAccess();
+          if (typeof res === "string" && res.length > 0) return res;
+          if (res?.address) return res.address;
+        } catch (e) {
+          console.warn("window.freighter.requestAccess error:", e);
+        }
+      }
     }
 
+    // Try getAddress
+    if (typeof (freighter as any).getAddress === "function") {
+      try {
+        const res = await (freighter as any).getAddress();
+        if (typeof res === "string" && res.length > 0) return res;
+        if (res && typeof res.address === "string" && res.address.length > 0) {
+          return res.address;
+        }
+      } catch (e) {
+        console.warn("getAddress error:", e);
+      }
+    }
+
+    // Try getPublicKey
     if (typeof (freighter as any).getPublicKey === "function") {
-      const pubKey = await (freighter as any).getPublicKey();
-      if (typeof pubKey === "string") return pubKey;
+      try {
+        const res = await (freighter as any).getPublicKey();
+        if (typeof res === "string" && res.length > 0) return res;
+        if (res && typeof res.publicKey === "string" && res.publicKey.length > 0) {
+          return res.publicKey;
+        }
+      } catch (e) {
+        console.warn("getPublicKey error:", e);
+      }
+    }
+
+    // Fallback: window.freighter direct call
+    if (typeof window !== "undefined" && (window as any).freighter) {
+      const wFreighter = (window as any).freighter;
+      try {
+        if (promptUser && typeof wFreighter.requestAccess === "function") {
+          const res = await wFreighter.requestAccess();
+          if (typeof res === "string" && res.length > 0) return res;
+          if (res?.address) return res.address;
+        }
+        if (typeof wFreighter.getAddress === "function") {
+          const res = await wFreighter.getAddress();
+          if (typeof res === "string" && res.length > 0) return res;
+          if (res?.address) return res.address;
+        }
+        if (typeof wFreighter.getPublicKey === "function") {
+          const res = await wFreighter.getPublicKey();
+          if (typeof res === "string" && res.length > 0) return res;
+          if (res?.publicKey) return res.publicKey;
+        }
+      } catch (e) {
+        console.warn("window.freighter error:", e);
+      }
     }
 
     return null;
   } catch (e) {
+    console.error("Error in getConnectedWallet:", e);
     return null;
   }
 }

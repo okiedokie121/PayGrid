@@ -26,12 +26,17 @@ export default function Navbar({ onWalletStateChange, adminAddress }: NavbarProp
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
-      const addr = await getConnectedWallet();
+      const addr = await getConnectedWallet(true);
       if (addr) {
         setWalletAddress(addr);
         if (onWalletStateChange) onWalletStateChange(addr);
       } else {
-        alert("Freighter extension not detected or access denied. Please install Freighter.");
+        const isInstalled = await checkFreighterConnected();
+        if (!isInstalled) {
+          alert("Freighter extension not detected. Please install Freighter from https://www.freighter.app/");
+        } else {
+          alert("Wallet connection was cancelled or permission was denied in Freighter.");
+        }
       }
     } catch (err) {
       console.error(err);
