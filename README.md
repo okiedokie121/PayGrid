@@ -6,7 +6,6 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 - **Live Demo**: [paygrid.pages.dev](https://paygrid.pages.dev)
-- **Demo Video & Walkthrough**: [screenshots/walkthrough.gif](./screenshots/walkthrough.gif)
 
 PayGrid is a production-grade decentralized application on Stellar built with Soroban smart contracts, deployed to Testnet, and integrated with Freighter wallet. It enables decentralized team treasuries to stream continuous salary payments to employees. Each employee's salary vests continuously per-second and claims execute on-chain with automatic SAC trustline validation, batched RPC updates, zero-credit treasury safety, and continuous treasury balance outflow.
 
