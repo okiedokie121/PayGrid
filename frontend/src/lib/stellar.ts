@@ -36,13 +36,17 @@ export function saveStoredEmployees(employees: StoredEmployee[]) {
   localStorage.setItem("paygrid_registered_employees", JSON.stringify(employees));
 }
 
-export function addStoredEmployee(name: string, wallet: string): StoredEmployee[] {
+export function addStoredEmployee(name: string, wallet: string, customRatePerSec?: string): StoredEmployee[] {
   const current = getStoredEmployees();
+  const rateStroops = customRatePerSec && parseFloat(customRatePerSec) > 0
+    ? BigInt(Math.floor(parseFloat(customRatePerSec) * 10_000_000)).toString()
+    : "25000000"; // default 2.5 PAY/sec
+
   const newEmp: StoredEmployee = {
     id: current.length + 1,
     name,
     wallet,
-    ratePerSecond: "25000000", // 2.5 PAY/sec
+    ratePerSecond: rateStroops,
     bankedAccrued: "0",
     lastUpdate: Math.floor(Date.now() / 1000),
     paused: false,

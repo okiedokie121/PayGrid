@@ -33,6 +33,7 @@ export default function AdminPanel() {
   const [fundAmount, setFundAmount] = useState<string>("100000");
   const [newEmpName, setNewEmpName] = useState<string>("");
   const [newEmpWallet, setNewEmpWallet] = useState<string>("");
+  const [newEmpRate, setNewEmpRate] = useState<string>("2.5"); // 2.5 PAY/sec default
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);
@@ -83,14 +84,15 @@ export default function AdminPanel() {
     setToast(null);
     try {
       await new Promise((r) => setTimeout(r, 1200));
-      const updated = addStoredEmployee(newEmpName, newEmpWallet);
+      const updated = addStoredEmployee(newEmpName, newEmpWallet, newEmpRate);
       setEmployees(updated);
       setToast({
-        msg: `Employee ${newEmpName} added to registry successfully!`,
+        msg: `Employee ${newEmpName} added to registry with custom rate of ${newEmpRate} PAY/sec!`,
         hash: "0bc21855c89de12d5f9127a3a41a7c6642b7db6db77334b5a63f985dde5ea3e3",
       });
       setNewEmpName("");
       setNewEmpWallet("");
+      setNewEmpRate("2.5");
     } catch (err) {
       console.error(err);
       setToast({ msg: "Failed to add employee." });
@@ -256,9 +258,26 @@ export default function AdminPanel() {
                     className="w-full bg-bgPrimary border border-borderSubtle rounded-xl px-3 py-2 text-sm text-textPrimary font-mono focus:outline-none focus:border-accentSecondary"
                   />
                 </div>
+                <div>
+                  <label className="text-xs text-textSecondary block mb-1">
+                    Custom Vesting Rate (PAY / sec)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.01"
+                    placeholder="e.g. 2.5"
+                    value={newEmpRate}
+                    onChange={(e) => setNewEmpRate(e.target.value)}
+                    className="w-full bg-bgPrimary border border-borderSubtle rounded-xl px-3 py-2 text-sm text-textPrimary font-mono focus:outline-none focus:border-accentSecondary"
+                  />
+                  <span className="text-[10px] text-textSecondary mt-0.5 block">
+                    ~{(parseFloat(newEmpRate || "0") * 31536000).toLocaleString(undefined, { maximumFractionDigits: 0 })} PAY / year
+                  </span>
+                </div>
                 <button
                   type="submit"
-                  disabled={isSubmitting || !newEmpName || !newEmpWallet}
+                  disabled={isSubmitting || !newEmpName || !newEmpWallet || !newEmpRate}
                   className="w-full py-2.5 rounded-xl bg-accentSecondary text-bgPrimary font-semibold text-xs shadow-md hover:opacity-90 disabled:opacity-50"
                 >
                   {isSubmitting ? "Adding..." : "Add Employee"}
@@ -303,6 +322,9 @@ export default function AdminPanel() {
                         </div>
                         <p className="text-xs text-textSecondary font-mono mt-0.5">
                           {emp.wallet}
+                        </p>
+                        <p className="text-[11px] text-accentPrimary font-mono mt-1">
+                          Vesting: +{(Number(emp.ratePerSecond) / 10_000_000).toFixed(2)} PAY/sec
                         </p>
                       </div>
 
