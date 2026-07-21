@@ -7,6 +7,7 @@ import {
 } from "@stellar/stellar-sdk";
 import {
   NETWORK_PASSPHRASE,
+  ISSUER_ADDRESS,
 } from "./constants";
 
 export async function checkFreighterConnected(): Promise<boolean> {
@@ -51,7 +52,8 @@ export async function checkPayTrustline(walletAddress: string): Promise<boolean>
     return account.balances.some((balance: any) => {
       return (
         balance.asset_type !== "native" &&
-        balance.asset_code === payAssetSymbol
+        balance.asset_code === payAssetSymbol &&
+        (balance.asset_issuer === ISSUER_ADDRESS || !balance.asset_issuer)
       );
     });
   } catch (e) {
@@ -63,7 +65,8 @@ export async function establishPayTrustline(walletAddress: string): Promise<stri
   const server = new Horizon.Server("https://horizon-testnet.stellar.org");
   const account = await server.loadAccount(walletAddress);
 
-  const payAsset = new Asset("PAY", walletAddress);
+  // PAY Asset using official deployed token issuer address
+  const payAsset = new Asset("PAY", ISSUER_ADDRESS);
 
   const tx = new TransactionBuilder(account, {
     fee: "10000",
