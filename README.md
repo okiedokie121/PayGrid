@@ -13,6 +13,12 @@ PayGrid is a production-grade decentralized application on Stellar built with So
 
 ---
 
+## Video Walkthrough
+
+![PayGrid Continuous Salary Streaming Walkthrough](./screenshots/walkthrough.gif)
+
+---
+
 ## Project Description
 
 PayGrid addresses the friction of traditional recurring payroll by replacing fixed monthly wire transfers with real-time per-second salary streaming on Stellar Soroban.
@@ -166,9 +172,9 @@ PayGrid implements real, on-chain inter-contract communication across modular co
 | :---: | :---: |
 | ![Admin Control Panel](./screenshots/admin.png) | ![Dashboard Grid](./screenshots/dashboard.png) |
 
-| XLM to PAY Swap Exchange | Continuous Salary Stream Walkthrough |
-| :---: | :---: |
-| ![Swap Page](./screenshots/swap.png) | ![Walkthrough](./screenshots/walkthrough.gif) |
+| XLM to PAY Swap Exchange |
+| :---: |
+| ![Swap Page](./screenshots/swap.png) |
 
 ## GitHub Actions CI/CD Pipeline
 
