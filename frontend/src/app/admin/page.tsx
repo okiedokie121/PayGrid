@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustlineNotice from "@/components/TrustlineNotice";
+import TreasuryTicker from "@/components/TreasuryTicker";
 import {
   getConnectedWallet,
   checkPayTrustline,
@@ -15,7 +16,6 @@ import {
   removeStoredEmployee,
   StoredEmployee,
 } from "@/lib/stellar";
-import { formatPayAmount } from "@/lib/math";
 import {
   Shield,
   PlusCircle,
@@ -162,7 +162,7 @@ export default function AdminPanel() {
               Treasury Contract Balance
             </span>
             <span className="text-xl font-extrabold text-accentPrimary font-mono">
-              {formatPayAmount(treasuryBalance, 2)} PAY
+              <TreasuryTicker baseBalanceStroops={treasuryBalance} employees={employees} decimals={2} /> PAY
             </span>
           </div>
         </div>
