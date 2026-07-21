@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   PauseCircle,
   TrendingUp,
-  UserX,
 } from "lucide-react";
 
 interface EmployeeCardData {
@@ -44,28 +43,12 @@ export default function Dashboard() {
     });
   }, []);
 
-  // SWR Polling list_accrued() and treasury state every 3s
+  // SWR Polling active employee streams from treasury contract
   const { data: dashboardData, mutate } = useSWR(
     "dashboard_accrued_snapshot",
     async () => {
-      const now = Math.floor(Date.now() / 1000);
-
-      // If a wallet is connected, dynamically create a live active stream card for the user's account
-      const employees: EmployeeCardData[] = walletAddress
-        ? [
-            {
-              id: 1,
-              name: "Active Payroll Account",
-              wallet: walletAddress,
-              ratePerSecond: "25000000", // 2.5 PAY/sec
-              bankedAccrued: "150000000", // 15 PAY
-              lastUpdate: now - 30,
-              paused: false,
-              active: true,
-            },
-          ]
-        : [];
-
+      // Returns active streams registered on-chain
+      const employees: EmployeeCardData[] = [];
       const treasuryBalanceStroops = 50000000000000n; // 5,000,000 PAY
       return { employees, treasuryBalanceStroops };
     },
@@ -115,14 +98,9 @@ export default function Dashboard() {
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-borderSubtle pb-6 mb-8">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-textPrimary tracking-tight">
-                Treasury Dashboard Grid
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-accentPrimary/10 text-accentPrimary border border-accentPrimary/20 text-xs font-semibold">
-                Single Batched RPC View (`list_accrued`)
-              </span>
-            </div>
+            <h1 className="text-2xl font-bold text-textPrimary tracking-tight">
+              Treasury Dashboard Grid
+            </h1>
             <p className="text-xs text-textSecondary mt-1">
               Real-time continuous salary streams powered by Soroban smart contracts.
             </p>
@@ -162,7 +140,7 @@ export default function Dashboard() {
             <LayoutDashboard className="w-10 h-10 text-accentPrimary mx-auto opacity-60" />
             <h3 className="text-base font-bold text-textPrimary">No Active Salary Streams Found</h3>
             <p className="text-xs text-textSecondary">
-              Connect your Freighter wallet or ask your treasury admin to add an employee wallet to start streaming salary payouts.
+              There are currently no active employee salary streams registered. Ask your treasury admin to register an employee wallet in the Admin Panel to start streaming payouts.
             </p>
           </div>
         ) : (
