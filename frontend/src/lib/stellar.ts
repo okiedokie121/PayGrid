@@ -59,9 +59,35 @@ export function addStoredEmployee(name: string, wallet: string, customRatePerSec
 
 export function togglePauseStoredEmployee(id: number): StoredEmployee[] {
   const current = getStoredEmployees();
-  const updated = current.map((emp) =>
-    emp.id === id ? { ...emp, paused: !emp.paused } : emp
-  );
+  const now = Math.floor(Date.now() / 1000);
+
+  const updated = current.map((emp) => {
+    if (emp.id !== id) return emp;
+
+    const rateStroops = BigInt(emp.ratePerSecond);
+    const bankedStroops = BigInt(emp.bankedAccrued || "0");
+    const elapsed = Math.max(0, now - emp.lastUpdate);
+
+    if (!emp.paused) {
+      // Pausing stream: Freeze & bank all accrued pay up to `now`
+      const newlyAccrued = BigInt(elapsed) * rateStroops;
+      const totalBanked = bankedStroops + newlyAccrued;
+      return {
+        ...emp,
+        bankedAccrued: totalBanked.toString(),
+        lastUpdate: now,
+        paused: true,
+      };
+    } else {
+      // Resuming stream: Update lastUpdate to `now` so time elapses from this moment forward
+      return {
+        ...emp,
+        lastUpdate: now,
+        paused: false,
+      };
+    }
+  });
+
   saveStoredEmployees(updated);
   return updated;
 }

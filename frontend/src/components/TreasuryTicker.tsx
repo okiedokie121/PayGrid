@@ -18,9 +18,9 @@ export default function TreasuryTicker({
   const [currentBalance, setCurrentBalance] = useState<bigint>(baseBalanceStroops);
 
   useEffect(() => {
-    const activeStreams = employees.filter((e) => e.active && !e.paused);
+    const activeEmployees = employees.filter((e) => e.active);
     
-    if (activeStreams.length === 0) {
+    if (activeEmployees.length === 0) {
       setCurrentBalance(baseBalanceStroops);
       return;
     }
@@ -29,9 +29,12 @@ export default function TreasuryTicker({
       const nowSeconds = Math.floor(Date.now() / 1000);
       let totalOutflowStroops = 0n;
 
-      for (const emp of activeStreams) {
-        const elapsed = Math.max(0, nowSeconds - emp.lastUpdate);
-        totalOutflowStroops += BigInt(elapsed) * BigInt(emp.ratePerSecond);
+      for (const emp of activeEmployees) {
+        totalOutflowStroops += BigInt(emp.bankedAccrued || "0");
+        if (!emp.paused) {
+          const elapsed = Math.max(0, nowSeconds - emp.lastUpdate);
+          totalOutflowStroops += BigInt(elapsed) * BigInt(emp.ratePerSecond);
+        }
       }
 
       const remaining =
