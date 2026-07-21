@@ -63,9 +63,6 @@ export default function Navbar({ onWalletStateChange, adminAddress }: NavbarProp
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-lg text-textPrimary tracking-tight">PayGrid</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-accentPrimary/10 text-accentPrimary border border-accentPrimary/20">
-                Soroban
-              </span>
             </div>
             <p className="text-xs text-textSecondary hidden sm:block">Continuous Team Payroll</p>
           </div>
@@ -80,22 +77,19 @@ export default function Navbar({ onWalletStateChange, adminAddress }: NavbarProp
             Overview
           </Link>
           <Link
+            href="/admin"
+            className="px-4 py-1.5 rounded-lg text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-bgSurfaceHover transition flex items-center gap-1.5"
+          >
+            <Shield className="w-4 h-4 text-accentPrimary" />
+            Admin Panel
+          </Link>
+          <Link
             href="/dashboard"
             className="px-4 py-1.5 rounded-lg text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-bgSurfaceHover transition flex items-center gap-1.5"
           >
             <LayoutDashboard className="w-4 h-4 text-accentSecondary" />
             Dashboard
           </Link>
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="px-4 py-1.5 rounded-lg text-sm font-medium text-accentPrimary bg-accentPrimary/10 border border-accentPrimary/20 hover:bg-accentPrimary/20 transition flex items-center gap-1.5"
-            >
-              <Shield className="w-4 h-4" />
-              Admin Panel
-            </Link>
-          )}
         </nav>
 
         {/* Wallet Connect Section */}
