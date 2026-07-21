@@ -11,14 +11,11 @@ import {
   checkPayTrustline,
 } from "@/lib/stellar";
 import {
-  formatPayAmount,
-} from "@/lib/math";
-import {
   LayoutDashboard,
   CheckCircle2,
   PauseCircle,
-  ArrowUpRight,
   TrendingUp,
+  UserX,
 } from "lucide-react";
 
 interface EmployeeCardData {
@@ -52,38 +49,22 @@ export default function Dashboard() {
     "dashboard_accrued_snapshot",
     async () => {
       const now = Math.floor(Date.now() / 1000);
-      const employees: EmployeeCardData[] = [
-        {
-          id: 1,
-          name: "Alice Vance",
-          wallet: walletAddress || "GDIJJBF4L2CWMNMXRNECQPLFOHUTSEUPUDIAHBOA4X2ISUU7MTSHL7SN",
-          ratePerSecond: "25000000", // 2.5 PAY/sec
-          bankedAccrued: "150000000", // 15 PAY
-          lastUpdate: now - 30,
-          paused: false,
-          active: true,
-        },
-        {
-          id: 2,
-          name: "Bob Builder",
-          wallet: "GBB3Y6OPO4WXYZEXAMPLEBOBADDRESS56CHARACTERSLONG02",
-          ratePerSecond: "50000000", // 5.0 PAY/sec
-          bankedAccrued: "420000000", // 42 PAY
-          lastUpdate: now - 60,
-          paused: false,
-          active: true,
-        },
-        {
-          id: 3,
-          name: "Carol Danvers",
-          wallet: "GCA3Y6OPO4WXYZEXAMPLECAROLADDRESS56CHARACTERSLONG3",
-          ratePerSecond: "10000000", // 1.0 PAY/sec
-          bankedAccrued: "90000000", // 9 PAY
-          lastUpdate: now - 120,
-          paused: true, // Paused stream
-          active: true,
-        },
-      ];
+
+      // If a wallet is connected, dynamically create a live active stream card for the user's account
+      const employees: EmployeeCardData[] = walletAddress
+        ? [
+            {
+              id: 1,
+              name: "Active Payroll Account",
+              wallet: walletAddress,
+              ratePerSecond: "25000000", // 2.5 PAY/sec
+              bankedAccrued: "150000000", // 15 PAY
+              lastUpdate: now - 30,
+              paused: false,
+              active: true,
+            },
+          ]
+        : [];
 
       const treasuryBalanceStroops = 50000000000000n; // 5,000,000 PAY
       return { employees, treasuryBalanceStroops };
@@ -143,7 +124,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-xs text-textSecondary mt-1">
-              Real-time independent employee salary tickers powered by Soroban smart contracts.
+              Real-time continuous salary streams powered by Soroban smart contracts.
             </p>
           </div>
         </div>
@@ -167,117 +148,127 @@ export default function Dashboard() {
                 href={`https://stellar.expert/explorer/testnet/tx/${txToast.hash}`}
                 target="_blank"
                 rel="noreferrer"
-                className="underline font-mono text-textPrimary hover:text-accentPrimary flex items-center gap-1"
+                className="underline font-mono text-textPrimary hover:text-accentPrimary"
               >
-                View on Stellar Expert <ArrowUpRight className="w-3 h-3" />
+                View Hash
               </a>
             )}
           </div>
         )}
 
         {/* Employee Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dashboardData?.employees.map((emp) => {
-            const isUserWallet =
-              walletAddress &&
-              walletAddress.toLowerCase() === emp.wallet.toLowerCase();
+        {dashboardData?.employees.length === 0 ? (
+          <div className="surface-card p-12 text-center space-y-3 max-w-md mx-auto my-12">
+            <LayoutDashboard className="w-10 h-10 text-accentPrimary mx-auto opacity-60" />
+            <h3 className="text-base font-bold text-textPrimary">No Active Salary Streams Found</h3>
+            <p className="text-xs text-textSecondary">
+              Connect your Freighter wallet or ask your treasury admin to add an employee wallet to start streaming salary payouts.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dashboardData?.employees.map((emp) => {
+              const isUserWallet =
+                walletAddress &&
+                walletAddress.toLowerCase() === emp.wallet.toLowerCase();
 
-            const rateStroops = BigInt(emp.ratePerSecond);
-            const bankedStroops = BigInt(emp.bankedAccrued);
-            const perSecTokens = Number(rateStroops) / 10_000_000;
+              const rateStroops = BigInt(emp.ratePerSecond);
+              const bankedStroops = BigInt(emp.bankedAccrued);
+              const perSecTokens = Number(rateStroops) / 10_000_000;
 
-            return (
-              <div
-                key={emp.id}
-                className={`surface-card p-6 flex flex-col justify-between space-y-6 relative overflow-hidden ${
-                  isUserWallet ? "border-accentPrimary/50 gold-glow" : ""
-                }`}
-              >
-                {/* Employee Info Header */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg text-textPrimary">{emp.name}</h3>
-                      {isUserWallet && (
-                        <span className="px-2 py-0.5 rounded-full bg-accentPrimary/20 text-accentPrimary text-[10px] font-bold">
-                          YOU
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-textSecondary font-mono mt-1">
-                      {emp.wallet.slice(0, 6)}...{emp.wallet.slice(-6)}
-                    </p>
-                  </div>
-
-                  {/* Stream Status Badge */}
-                  {emp.paused ? (
-                    <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentWarning/10 text-accentWarning border border-accentWarning/20 text-xs font-semibold">
-                      <PauseCircle className="w-3.5 h-3.5" /> Paused
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentSuccess/10 text-accentSuccess border border-accentSuccess/20 text-xs font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-accentSuccess animate-pulse" /> Stream Active
-                    </span>
-                  )}
-                </div>
-
-                {/* Live Accruing Ticker */}
-                <div className="bg-bgPrimary/60 p-4 rounded-xl border border-borderSubtle space-y-1">
-                  <div className="flex items-center justify-between text-xs text-textSecondary">
-                    <span>Accrued Unclaimed Salary</span>
-                    <span className="text-[10px] uppercase font-mono text-accentSecondary">
-                      Continuous Vesting
-                    </span>
-                  </div>
-                  <div className="text-3xl font-extrabold text-accentPrimary font-mono tabular-nums">
-                    <Ticker
-                      bankedStroops={bankedStroops}
-                      rateStroops={rateStroops}
-                      lastUpdateSeconds={emp.lastUpdate}
-                      paused={emp.paused}
-                      decimals={4}
-                    />{" "}
-                    <span className="text-sm font-normal text-textSecondary">PAY</span>
-                  </div>
-                </div>
-
-                {/* Stream Metrics */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-bgSurfaceHover/50 p-2.5 rounded-lg border border-borderSubtle/50">
-                    <span className="text-textSecondary block">Vesting Rate</span>
-                    <span className="font-semibold text-textPrimary font-mono">
-                      +{perSecTokens.toFixed(2)} PAY/sec
-                    </span>
-                  </div>
-                  <div className="bg-bgSurfaceHover/50 p-2.5 rounded-lg border border-borderSubtle/50">
-                    <span className="text-textSecondary block">Annualized</span>
-                    <span className="font-semibold text-textPrimary font-mono">
-                      ~{(perSecTokens * 31536000).toLocaleString(undefined, { maximumFractionDigits: 0 })} PAY/yr
-                    </span>
-                  </div>
-                </div>
-
-                {/* Claim Button */}
-                <button
-                  onClick={() => handleClaim(emp)}
-                  disabled={claimingId === emp.id || emp.paused}
-                  className={`w-full py-3 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 ${
-                    emp.paused
-                      ? "bg-bgSurfaceHover text-textSecondary cursor-not-allowed border border-borderSubtle"
-                      : "bg-gradient-to-r from-accentPrimary to-[#e8c383] text-bgPrimary hover:opacity-90 shadow-md shadow-accentPrimary/10"
+              return (
+                <div
+                  key={emp.id}
+                  className={`surface-card p-6 flex flex-col justify-between space-y-6 relative overflow-hidden ${
+                    isUserWallet ? "border-accentPrimary/50 gold-glow" : ""
                   }`}
                 >
-                  <TrendingUp className="w-4 h-4" />
-                  {claimingId === emp.id
-                    ? "Submitting Claim TX..."
-                    : emp.paused
-                    ? "Stream Currently Paused"
-                    : "Claim Accrued Pay"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
+                  {/* Employee Info Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-lg text-textPrimary">{emp.name}</h3>
+                        {isUserWallet && (
+                          <span className="px-2 py-0.5 rounded-full bg-accentPrimary/20 text-accentPrimary text-[10px] font-bold">
+                            YOU
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-textSecondary font-mono mt-1">
+                        {emp.wallet.slice(0, 6)}...{emp.wallet.slice(-6)}
+                      </p>
+                    </div>
+
+                    {/* Stream Status Badge */}
+                    {emp.paused ? (
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentWarning/10 text-accentWarning border border-accentWarning/20 text-xs font-semibold">
+                        <PauseCircle className="w-3.5 h-3.5" /> Paused
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentSuccess/10 text-accentSuccess border border-accentSuccess/20 text-xs font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-accentSuccess animate-pulse" /> Stream Active
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Live Accruing Ticker */}
+                  <div className="bg-bgPrimary/60 p-4 rounded-xl border border-borderSubtle space-y-1">
+                    <div className="flex items-center justify-between text-xs text-textSecondary">
+                      <span>Accrued Unclaimed Salary</span>
+                      <span className="text-[10px] uppercase font-mono text-accentSecondary">
+                        Continuous Vesting
+                      </span>
+                    </div>
+                    <div className="text-3xl font-extrabold text-accentPrimary font-mono tabular-nums">
+                      <Ticker
+                        bankedStroops={bankedStroops}
+                        rateStroops={rateStroops}
+                        lastUpdateSeconds={emp.lastUpdate}
+                        paused={emp.paused}
+                        decimals={4}
+                      />{" "}
+                      <span className="text-sm font-normal text-textSecondary">PAY</span>
+                    </div>
+                  </div>
+
+                  {/* Stream Metrics */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-bgSurfaceHover/50 p-2.5 rounded-lg border border-borderSubtle/50">
+                      <span className="text-textSecondary block">Vesting Rate</span>
+                      <span className="font-semibold text-textPrimary font-mono">
+                        +{perSecTokens.toFixed(2)} PAY/sec
+                      </span>
+                    </div>
+                    <div className="bg-bgSurfaceHover/50 p-2.5 rounded-lg border border-borderSubtle/50">
+                      <span className="text-textSecondary block">Annualized</span>
+                      <span className="font-semibold text-textPrimary font-mono">
+                        ~{(perSecTokens * 31536000).toLocaleString(undefined, { maximumFractionDigits: 0 })} PAY/yr
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Claim Button */}
+                  <button
+                    onClick={() => handleClaim(emp)}
+                    disabled={claimingId === emp.id || emp.paused}
+                    className={`w-full py-3 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 ${
+                      emp.paused
+                        ? "bg-bgSurfaceHover text-textSecondary cursor-not-allowed border border-borderSubtle"
+                        : "bg-gradient-to-r from-accentPrimary to-[#e8c383] text-bgPrimary hover:opacity-90 shadow-md shadow-accentPrimary/10"
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    {claimingId === emp.id
+                      ? "Submitting Claim TX..."
+                      : emp.paused
+                      ? "Stream Currently Paused"
+                      : "Claim Accrued Pay"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       <Footer />

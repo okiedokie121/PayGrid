@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustlineNotice from "@/components/TrustlineNotice";
 import { getConnectedWallet, checkPayTrustline } from "@/lib/stellar";
-import { annualSalaryToStroopsPerSecond, formatPayAmount } from "@/lib/math";
+import { formatPayAmount } from "@/lib/math";
 import {
   Shield,
   PlusCircle,
@@ -14,10 +14,7 @@ import {
   PauseCircle,
   PlayCircle,
   Coins,
-  ArrowRight,
   CheckCircle2,
-  AlertTriangle,
-  Zap,
 } from "lucide-react";
 
 interface AdminEmployeeItem {
@@ -36,41 +33,11 @@ export default function AdminPanel() {
   const [newEmpName, setNewEmpName] = useState<string>("");
   const [newEmpWallet, setNewEmpWallet] = useState<string>("");
 
-  const [selectedEmpId, setSelectedEmpId] = useState<number>(1);
-  const [annualSalaryInput, setAnnualSalaryInput] = useState<string>("120000");
-  const [streamRateInput, setStreamRateInput] = useState<string>("10"); // 10 PAY/sec
-
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);
 
-  // Mocked/Fetched state
   const [treasuryBalance, setTreasuryBalance] = useState<bigint>(50000000000000n); // 5,000,000 PAY
-  const [employees, setEmployees] = useState<AdminEmployeeItem[]>([
-    {
-      id: 1,
-      name: "Alice Vance",
-      wallet: "GDIJJBF4L2CWMNMXRNECQPLFOHUTSEUPUDIAHBOA4X2ISUU7MTSHL7SN",
-      ratePerSecond: "100000000", // 10 PAY/sec
-      paused: false,
-      active: true,
-    },
-    {
-      id: 2,
-      name: "Bob Builder",
-      wallet: "GBB3Y6OPO4WXYZEXAMPLEBOBADDRESS56CHARACTERSLONG02",
-      ratePerSecond: "50000000", // 5 PAY/sec
-      paused: false,
-      active: true,
-    },
-    {
-      id: 3,
-      name: "Carol Danvers",
-      wallet: "GCA3Y6OPO4WXYZEXAMPLECAROLADDRESS56CHARACTERSLONG3",
-      ratePerSecond: "20000000", // 2 PAY/sec
-      paused: true,
-      active: true,
-    },
-  ]);
+  const [employees, setEmployees] = useState<AdminEmployeeItem[]>([]);
 
   useEffect(() => {
     getConnectedWallet().then((addr) => {
@@ -91,7 +58,7 @@ export default function AdminPanel() {
       setTreasuryBalance((prev) => prev + addedStroops);
       setToast({
         msg: `Successfully funded Treasury with ${fundAmount} PAY!`,
-        hash: "3980545ff656a9a57a29c43b493d8761aedd8b6a53583f5c35e3917ed200d236",
+        hash: "01271423859c27ad3b05697453a04ac64d0a0562624ca91039e3dcd4cd1eb333",
       });
     } catch (err: any) {
       console.error(err);
@@ -115,14 +82,14 @@ export default function AdminPanel() {
           id: newId,
           name: newEmpName,
           wallet: newEmpWallet,
-          ratePerSecond: "100000000", // 10 PAY/sec
+          ratePerSecond: "25000000", // 2.5 PAY/sec
           paused: false,
           active: true,
         },
       ]);
       setToast({
         msg: `Employee ${newEmpName} added to registry successfully!`,
-        hash: "06d4ab14be43956f0a43e4e1a80eb468082ffd8f5f7f13dab3d1ffe08ebfd83b",
+        hash: "0bc21855c89de12d5f9127a3a41a7c6642b7db6db77334b5a63f985dde5ea3e3",
       });
       setNewEmpName("");
       setNewEmpWallet("");
@@ -147,7 +114,7 @@ export default function AdminPanel() {
       const emp = employees.find((e) => e.id === empId);
       setToast({
         msg: `Stream ${emp?.paused ? "resumed" : "paused"} for ${emp?.name}!`,
-        hash: "1a7921f827a6002b96d49f402b32cd9d62065aa70a020659c5aceb7c6de1e042",
+        hash: "2012c46a9795acd1d3acf70fb6638a7ec94befb397248630349d286b25432afb",
       });
     } catch (err) {
       console.error(err);
@@ -274,7 +241,7 @@ export default function AdminPanel() {
                   <label className="text-xs text-textSecondary block mb-1">Full Name</label>
                   <input
                     type="text"
-                    placeholder="e.g. Alice Vance"
+                    placeholder="e.g. John Smith"
                     value={newEmpName}
                     onChange={(e) => setNewEmpName(e.target.value)}
                     className="w-full bg-bgPrimary border border-borderSubtle rounded-xl px-3 py-2 text-sm text-textPrimary focus:outline-none focus:border-accentSecondary"
@@ -311,63 +278,71 @@ export default function AdminPanel() {
               </h3>
 
               <div className="space-y-3">
-                {employees.map((emp) => (
-                  <div
-                    key={emp.id}
-                    className="bg-bgPrimary/60 p-4 rounded-xl border border-borderSubtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-textPrimary">{emp.name}</span>
-                        <span className="text-xs text-textSecondary font-mono">
-                          #{emp.id}
-                        </span>
-                        {!emp.active && (
-                          <span className="px-2 py-0.5 rounded-full bg-accentDanger/10 text-accentDanger text-[10px] font-bold">
-                            Removed
+                {employees.length === 0 ? (
+                  <div className="p-8 text-center bg-bgPrimary/40 rounded-xl border border-borderSubtle space-y-2">
+                    <UserCheck className="w-8 h-8 text-textSecondary mx-auto opacity-50" />
+                    <h4 className="text-sm font-semibold text-textPrimary">No Employees Registered Yet</h4>
+                    <p className="text-xs text-textSecondary max-w-sm mx-auto">
+                      Add your first employee to the registry using the form on the left to start streaming salary payouts.
+                    </p>
+                  </div>
+                ) : (
+                  employees.map((emp) => (
+                    <div
+                      key={emp.id}
+                      className="bg-bgPrimary/60 p-4 rounded-xl border border-borderSubtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-textPrimary">{emp.name}</span>
+                          <span className="text-xs text-textSecondary font-mono">
+                            #{emp.id}
                           </span>
+                          {!emp.active && (
+                            <span className="px-2 py-0.5 rounded-full bg-accentDanger/10 text-accentDanger text-[10px] font-bold">
+                              Removed
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-textSecondary font-mono mt-0.5">
+                          {emp.wallet}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleTogglePause(emp.id)}
+                          disabled={isSubmitting || !emp.active}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
+                            emp.paused
+                              ? "bg-accentSuccess/10 text-accentSuccess border border-accentSuccess/30 hover:bg-accentSuccess/20"
+                              : "bg-accentWarning/10 text-accentWarning border border-accentWarning/30 hover:bg-accentWarning/20"
+                          }`}
+                        >
+                          {emp.paused ? (
+                            <>
+                              <PlayCircle className="w-4 h-4" /> Resume Stream
+                            </>
+                          ) : (
+                            <>
+                              <PauseCircle className="w-4 h-4" /> Pause Stream
+                            </>
+                          )}
+                        </button>
+
+                        {emp.active && (
+                          <button
+                            onClick={() => handleRemoveEmployee(emp.id)}
+                            disabled={isSubmitting}
+                            className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-accentDanger/10 text-accentDanger border border-accentDanger/30 hover:bg-accentDanger/20 transition flex items-center gap-1.5"
+                          >
+                            <UserX className="w-4 h-4" /> Deactivate
+                          </button>
                         )}
                       </div>
-                      <p className="text-xs text-textSecondary font-mono mt-0.5">
-                        {emp.wallet}
-                      </p>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Pause / Resume Button */}
-                      <button
-                        onClick={() => handleTogglePause(emp.id)}
-                        disabled={isSubmitting || !emp.active}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition ${
-                          emp.paused
-                            ? "bg-accentSuccess/10 text-accentSuccess border border-accentSuccess/30 hover:bg-accentSuccess/20"
-                            : "bg-accentWarning/10 text-accentWarning border border-accentWarning/30 hover:bg-accentWarning/20"
-                        }`}
-                      >
-                        {emp.paused ? (
-                          <>
-                            <PlayCircle className="w-4 h-4" /> Resume Stream
-                          </>
-                        ) : (
-                          <>
-                            <PauseCircle className="w-4 h-4" /> Pause Stream
-                          </>
-                        )}
-                      </button>
-
-                      {/* Remove Employee Button */}
-                      {emp.active && (
-                        <button
-                          onClick={() => handleRemoveEmployee(emp.id)}
-                          disabled={isSubmitting}
-                          className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-accentDanger/10 text-accentDanger border border-accentDanger/30 hover:bg-accentDanger/20 transition flex items-center gap-1.5"
-                        >
-                          <UserX className="w-4 h-4" /> Deactivate
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
