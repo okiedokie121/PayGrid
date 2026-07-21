@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   PauseCircle,
   TrendingUp,
+  Lock,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -49,6 +50,12 @@ export default function Dashboard() {
   const handleClaim = async (emp: StoredEmployee) => {
     if (!walletAddress) {
       alert("Please connect Freighter wallet first.");
+      return;
+    }
+
+    const isOwner = walletAddress.toLowerCase() === emp.wallet.toLowerCase();
+    if (!isOwner) {
+      alert(`Unauthorized: Only the stream owner (${emp.wallet.slice(0, 6)}...${emp.wallet.slice(-4)}) is authorized to claim accrued pay.`);
       return;
     }
 
@@ -141,6 +148,8 @@ export default function Dashboard() {
                 walletAddress &&
                 walletAddress.toLowerCase() === emp.wallet.toLowerCase();
 
+              const isClaimDisabled = claimingId === emp.id || emp.paused || !isUserWallet;
+
               const rateStroops = BigInt(emp.ratePerSecond);
               const bankedStroops = BigInt(emp.bankedAccrued);
               const perSecTokens = Number(rateStroops) / 10_000_000;
@@ -219,18 +228,24 @@ export default function Dashboard() {
                   {/* Claim Button */}
                   <button
                     onClick={() => handleClaim(emp)}
-                    disabled={claimingId === emp.id || emp.paused}
+                    disabled={isClaimDisabled}
                     className={`w-full py-3 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-2 ${
-                      emp.paused
+                      isClaimDisabled
                         ? "bg-bgSurfaceHover text-textSecondary cursor-not-allowed border border-borderSubtle"
                         : "bg-gradient-to-r from-accentPrimary to-[#e8c383] text-bgPrimary hover:opacity-90 shadow-md shadow-accentPrimary/10"
                     }`}
                   >
-                    <TrendingUp className="w-4 h-4" />
+                    {!isUserWallet && !emp.paused ? (
+                      <Lock className="w-4 h-4 text-textSecondary" />
+                    ) : (
+                      <TrendingUp className="w-4 h-4" />
+                    )}
                     {claimingId === emp.id
                       ? "Submitting Claim TX..."
                       : emp.paused
                       ? "Stream Currently Paused"
+                      : !isUserWallet
+                      ? "Only Stream Owner Can Claim"
                       : "Claim Accrued Pay"}
                   </button>
                 </div>
