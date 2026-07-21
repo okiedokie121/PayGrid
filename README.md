@@ -170,6 +170,12 @@ PayGrid implements real, on-chain inter-contract communication across modular co
 | :---: | :---: |
 | ![Swap Page](./screenshots/swap.png) | ![Walkthrough](./screenshots/walkthrough.gif) |
 
+## GitHub Actions CI/CD Pipeline
+
+| All 6 GitHub Actions Checks Passing |
+| :---: |
+| ![GitHub Actions Passing Checks](./screenshots/ci_cd.png) |
+
 ---
 
 ## Setup Instructions
