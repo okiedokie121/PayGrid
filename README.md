@@ -1,6 +1,5 @@
 # PayGrid — Continuous Team Treasury & Salary Streaming on Stellar
 
-![CI Workflow](https://github.com/paygrid/paygrid-soroban/actions/workflows/ci.yml/badge.svg)
 ![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet%20Protocol%2022%2B-blue?logo=stellar)
 ![Soroban SDK](https://img.shields.io/badge/Soroban-v22.0.11-gold)
 ![Next.js 14](https://img.shields.io/badge/Next.js-14.2.22-black?logo=next.js)
@@ -188,8 +187,8 @@ PayGrid implements real, on-chain inter-contract communication across modular co
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/paygrid/paygrid-soroban.git
-cd paygrid-soroban
+git clone https://github.com/okiedokie121/PayGrid.git
+cd PayGrid
 
 # 2. Run smart contract unit tests
 cargo test
