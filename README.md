@@ -6,14 +6,37 @@
 ![Next.js 14](https://img.shields.io/badge/Next.js-14.2.22-black?logo=next.js)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-PayGrid is a production-grade decentralized application on Stellar built with Soroban smart contracts, deployed to Testnet, and integrated with Freighter wallet. It enables decentralized team treasuries to stream continuous salary payments to employees. Each employee's salary vests continuously per-second and claims execute on-chain with automatic SAC trustline validation, batched RPC updates, and zero-credit treasury safety.
+- **Live Demo**: `http://localhost:3000` (`PENDING — Frontend static export ready for Vercel/Cloudflare Pages deployment`)
+- **Demo Video (1–2 min)**: `PENDING — Manual screen recording required by human user`
+
+PayGrid is a production-grade decentralized application on Stellar built with Soroban smart contracts, deployed to Testnet, and integrated with Freighter wallet. It enables decentralized team treasuries to stream continuous salary payments to employees. Each employee's salary vests continuously per-second and claims execute on-chain with automatic SAC trustline validation, batched RPC updates, zero-credit treasury safety, and continuous treasury balance outflow.
+
+---
+
+## Project Description
+
+PayGrid addresses the friction of traditional recurring payroll by replacing fixed monthly wire transfers with real-time per-second salary streaming on Stellar Soroban.
+
+- **Continuous Salary Streaming**: Vesting accrues every single second based on custom per-second rates configured in the Admin Control Panel.
+- **Granular Stream Management**: Admins can register employees, customize vesting rates, pause individual streams without affecting others, fund the treasury pool, or remove deactivated employees.
+- **Live Treasury Balance Outflow**: The treasury vault balance continuously decreases in real time as employees accrue salary, freezing precisely when streams are paused.
+- **On-Chain Payout Claims**: Employees claim their accrued earnings on-chain directly into their Freighter wallet with 1-click trustline verification.
+- **XLM to PAY In-App Swap**: Instant 1:100 swap on Stellar Testnet for testing and treasury liquidity funding.
+
+---
+
+## Tech Stack
+
+- **Smart Contracts**: Rust (`wasm32v1-none` target), Soroban SDK `v22.0.11`, Stellar Testnet Protocol 22+.
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS with custom dark gold theme, Lucide icons, SWR.
+- **Stellar Integration**: `@stellar/stellar-sdk` `v13`, `@stellar/freighter-api` `v3`.
+- **Testing & CI**: `cargo test` (15 passing smart contract unit tests), `vitest` (7 passing frontend logic unit tests), GitHub Actions CI/CD pipeline.
 
 ---
 
 ## Architecture Sequence Diagram
 
 ```mermaid
-sequenceDocument
 sequenceDiagram
     autonumber
     actor Employee as Employee / Admin Wallet
@@ -58,7 +81,7 @@ sequenceDiagram
 
 ---
 
-## Deployed Smart Contracts (Stellar Testnet)
+## Smart Contracts (Stellar Testnet)
 
 All smart contracts are independently deployed to Stellar Testnet (Protocol 22+) using the official Stellar CLI.
 
@@ -87,7 +110,7 @@ Every transaction hash below represents an actual on-chain transaction executed 
 
 ---
 
-## Inter-contract communication
+## Inter-Contract Calls
 
 PayGrid implements real, on-chain inter-contract communication across modular contracts:
 
@@ -100,100 +123,47 @@ PayGrid implements real, on-chain inter-contract communication across modular co
 
 ---
 
-## Event streaming & real-time updates
+## Wallet Connection
 
-- **Soroban Events**: On every payout claim, `treasury` publishes a Soroban event `Claimed(employee_id, employee_address, payout_amount, remaining_accrued)`.
-- **SWR Batched RPC Polling**: The frontend uses SWR to query `treasury.list_accrued()` every 3 seconds. `list_accrued()` returns all active employees' banked accruals in a single RPC call, avoiding N separate requests.
-- **Client-Side Ticker**: Between RPC polls, the frontend ticks accrued earnings locally every 100ms using `font-variant-numeric: tabular-nums` to eliminate visual jitter.
-
----
-
-## CI/CD pipeline setup
-
-Automated GitHub Actions workflow configured in `.github/workflows/ci.yml`:
-1. Installs Rust toolchain (`wasm32v1-none` target).
-2. Executes all smart contract unit tests (`cargo test`).
-3. Compiles Soroban WASM release binaries (`cargo build --release`).
-4. Installs Node.js dependencies (`npm install`).
-5. Executes Vitest pure logic unit tests (`npm run test`).
-6. Builds static production export (`npm run build`).
+- Integrated with Freighter Wallet (`@stellar/freighter-api`).
+- Automatically detects connected public keys and checks Horizon balances for XLM and PAY assets.
+- Enforces strict wallet ownership authorization: only the employee wallet matching the stream can claim pay.
 
 ---
 
-## Smart contract deployment workflow
+## Core Mechanics & Vesting Math
 
-Contracts are deployed in dependency order using the official Stellar CLI:
-1. `stellar keys generate` creates funded accounts on Testnet via Friendbot.
-2. `employee_registry.wasm` is uploaded and deployed.
-3. `employee_registry.initialize(admin)` is invoked.
-4. `stellar contract asset deploy` deploys the `PAY` asset SAC contract.
-5. `treasury.wasm` is uploaded and deployed.
-6. `treasury.initialize(admin, registry, token)` is invoked.
-7. Admin and Employee accounts establish `PAY` asset trustlines.
-8. Issuer mints `PAY` tokens to Admin; Admin calls `treasury.fund(amount)`.
-9. `deployments/testnet.json` records all contract IDs and transaction hashes.
+- **Vesting Rate**: Configured in stroops per second (1 PAY = 10,000,000 stroops).
+- **Accrual Formula**:
+  $$\text{accruedStroops} = \text{bankedAccrued} + (t_{\text{current}} - t_{\text{lastUpdate}}) \times \text{ratePerSecond}$$
+- **Treasury Outflow Formula**:
+  $$\text{treasuryRemaining} = \max\left(0, \text{baseDeposited} - \sum \text{accruedStroops}_{\text{active}}\right)$$
+- **Zero-Credit Payout Safety**:
+  $$\text{claimable} = \min(\text{accruedStroops}, \text{treasuryVaultBalance})$$
 
 ---
 
-## Mobile responsive frontend
-
-- Mobile-first layout optimized for ~375px (iPhone SE), ~768px (tablets), and desktop viewports.
-- Responsive employee card grid collapses into single-column stack on mobile.
-- Custom dark palette: near-black base (`#0a0b0d`), card surface (`#131519`), gold accents (`#c9a15a`), cool blue data accents (`#5b9df0`), and status indicators (`#34d399`, `#f2994a`, `#ef5350`).
-
----
-
-## Error handling & loading states
+## Error Handling
 
 - **Missing Trustline**: Detected client-side before any transfer/claim action; surfaces a 1-click `ChangeTrust` button.
+- **Unauthorized Wallet Claim**: Blocks claim attempts from wallets that do not match the employee stream address (`Only Stream Owner Can Claim`).
 - **Underfunded Treasury**: `claimable = min(accrued, treasury_balance)`. Payouts never fail due to partial balance; remaining unpaid accrual remains banked.
-- **Paused Stream**: Claims on paused streams display `"Your stream is currently paused — contact your admin"`.
+- **Paused Stream**: Claims on paused streams display `"Stream Currently Paused"`.
 - **Deactivated Employee**: Claims by removed employees display `"You are no longer an active employee on this treasury"`.
-- **Rejected Signature**: Shows `"Transaction rejected in wallet"`.
+- **User Rejected Signature**: Catches wallet cancellation and displays `"Transaction rejected in wallet"`.
 
 ---
 
-## Writing tests for contracts and frontend
+## Screenshots
 
-### Smart Contract Unit Tests (15 Passing Tests in `cargo test`)
-- `test_01_employee_registry_init_and_add`: Registers and fetches employee info.
-- `test_02_employee_registry_remove`: Deactivates employee and filters active lists.
-- `test_03_treasury_init_and_fund`: Funds treasury vault.
-- `test_04_fund_invalid_amount_fails`: Rejects zero or negative funding.
-- `test_05_set_stream_inactive_employee_fails`: Refuses stream for inactive employee.
-- `test_06_accrued_immediately_after_set_stream_is_zero`: Accrued balance starts at 0.
-- `test_07_accrued_grows_over_time`: Accrual grows proportionally to elapsed timestamp.
-- `test_08_claim_pays_exact_accrued_amount_and_resets`: Payout matches accrued and resets banked balance.
-- `test_09_claim_caps_at_treasury_balance`: Caps payouts at treasury balance and banks remainder.
-- `test_10_pause_stream_freezes_accrual_and_preserves_banked`: Pausing freezes time accrual while preserving banked earnings.
-- `test_11_resume_stream_restarts_accrual`: Resuming restarts time accrual from banked amount.
-- `test_12_claim_after_employee_removal_fails`: Inter-contract registry check blocks claims after removal.
-- `test_13_list_accrued_returns_active_employees`: Batched `list_accrued()` returns active employee pairs.
-- `test_14_rate_change_banks_old_accrual`: Rate changes bank previous earnings before applying new rate.
-- `test_15_claim_when_paused_fails`: Claims on paused streams fail.
-
-### Frontend Unit Tests (7 Passing Tests in `vitest`)
-- Salary-to-stroop conversion, inverse calculation, currency formatting, live ticker accrual calculation, pause freezing, full claim payout, and partial claim capping.
+- **Overview Page**: Core landing page showcasing treasury highlights and active features.
+- **Swap Page**: Real-time XLM to PAY conversion with Freighter balance verification.
+- **Admin Control Panel**: Treasury funding form, custom vesting rate registration, and live TreasuryTicker outflow.
+- **Dashboard Grid**: Active salary streams with live continuous ticker and stream owner claim locking.
 
 ---
 
-## Production-ready architecture practices
-
-- Strict non-credit claims: `claimable = min(accrued, treasury_balance)`.
-- Lazy-computed accrual: zero scheduled background crons; earnings calculated on-demand upon read/claim.
-- Modular WASMs & clean Soroban client interfaces.
-- Environment variables configured via `.env.local`.
-
----
-
-## Documentation & demo presentation
-
-- Live Demo: `PENDING — Frontend export ready for Vercel/Cloudflare Pages deployment`
-- Demo Video (1–2 min): `PENDING — Manual screen recording required by human user`
-
----
-
-## Local Setup & Testing Instructions
+## Setup Instructions
 
 ```bash
 # 1. Clone repository
@@ -213,6 +183,44 @@ npm run test
 
 # 5. Run local development server
 npm run dev
+```
+
+---
+
+## Testing & Verification Output
+
+### Smart Contract Unit Tests (15 Passing Tests in `cargo test`)
+```
+running 2 tests
+test test::test_01_employee_registry_init_and_add ... ok
+test test::test_02_employee_registry_remove ... ok
+test result: ok. 2 passed; 0 failed
+
+running 13 tests
+test test::test_04_fund_invalid_amount_fails - should panic ... ok
+test test::test_05_set_stream_inactive_employee_fails - should panic ... ok
+test test::test_07_accrued_grows_over_time ... ok
+test test::test_10_pause_stream_freezes_accrual_and_preserves_banked ... ok
+test test::test_06_accrued_immediately_after_set_stream_is_zero ... ok
+test test::test_03_treasury_init_and_fund ... ok
+test test::test_11_resume_stream_restarts_accrual ... ok
+test test::test_09_claim_caps_at_treasury_balance ... ok
+test test::test_08_claim_pays_exact_accrued_amount_and_resets ... ok
+test test::test_12_claim_after_employee_removal_fails - should panic ... ok
+test test::test_14_rate_change_banks_old_accrual ... ok
+test test::test_15_claim_when_paused_fails - should panic ... ok
+test test::test_13_list_accrued_returns_active_employees ... ok
+test result: ok. 13 passed; 0 failed
+```
+
+### Frontend Unit Tests (7 Passing Tests in `vitest`)
+```
+ RUN  v2.1.9 /Users/vidit/Documents/RiseInJ21/frontend
+
+ ✓ src/tests/math.test.ts (7 tests) 31ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
 ```
 
 ---
