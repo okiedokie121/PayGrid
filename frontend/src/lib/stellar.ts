@@ -44,6 +44,38 @@ export async function getConnectedWallet(): Promise<string | null> {
   }
 }
 
+export async function fetchWalletBalances(walletAddress: string): Promise<{ xlm: string; pay: string; rawXlm: number; rawPay: number }> {
+  try {
+    const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+    const account = await server.loadAccount(walletAddress);
+    
+    let rawXlm = 0;
+    let rawPay = 0;
+
+    for (const b of account.balances as any[]) {
+      if (b.asset_type === "native") {
+        rawXlm = parseFloat(b.balance);
+      } else if (b.asset_code === "PAY") {
+        rawPay = parseFloat(b.balance);
+      }
+    }
+
+    const xlm = rawXlm.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    });
+    const pay = rawPay.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    });
+
+    return { xlm, pay, rawXlm, rawPay };
+  } catch (e) {
+    console.error("Failed to fetch wallet balances:", e);
+    return { xlm: "0.00", pay: "0.00", rawXlm: 0, rawPay: 0 };
+  }
+}
+
 export async function checkPayTrustline(walletAddress: string): Promise<boolean> {
   try {
     const server = new Horizon.Server("https://horizon-testnet.stellar.org");

@@ -4,15 +4,13 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustlineNotice from "@/components/TrustlineNotice";
-import { getConnectedWallet, checkPayTrustline } from "@/lib/stellar";
+import { getConnectedWallet, checkPayTrustline, fetchWalletBalances } from "@/lib/stellar";
 import {
   ArrowDown,
   RefreshCw,
   Zap,
   CheckCircle2,
-  AlertCircle,
   ExternalLink,
-  Settings,
 } from "lucide-react";
 
 export default function SwapPage() {
@@ -21,23 +19,43 @@ export default function SwapPage() {
 
   const [fromAmount, setFromAmount] = useState<string>("10");
   const [toAmount, setToAmount] = useState<string>("1000"); // 1 XLM = 100 PAY
-  const [slippage, setSlippage] = useState<number>(0.5);
   const [isSwapping, setIsSwapping] = useState<boolean>(false);
   const [txToast, setTxToast] = useState<{ msg: string; hash?: string } | null>(null);
 
-  // Mocked balances for UI display
-  const xlmBalance = "142.58";
-  const payBalance = "2,500.00";
+  // Real Wallet Balances fetched from Horizon Testnet
+  const [xlmBalance, setXlmBalance] = useState<string>("0.00");
+  const [payBalance, setPayBalance] = useState<string>("0.00");
+  const [rawXlm, setRawXlm] = useState<number>(0);
   const exchangeRate = 100; // 1 XLM = 100 PAY
+
+  const loadBalances = async (addr: string) => {
+    const balances = await fetchWalletBalances(addr);
+    setXlmBalance(balances.xlm);
+    setPayBalance(balances.pay);
+    setRawXlm(balances.rawXlm);
+  };
 
   useEffect(() => {
     getConnectedWallet().then((addr) => {
       setWalletAddress(addr);
       if (addr) {
         checkPayTrustline(addr).then((ok) => setHasTrustline(ok));
+        loadBalances(addr);
       }
     });
   }, []);
+
+  const handleWalletChange = (addr: string | null) => {
+    setWalletAddress(addr);
+    if (addr) {
+      checkPayTrustline(addr).then((ok) => setHasTrustline(ok));
+      loadBalances(addr);
+    } else {
+      setXlmBalance("0.00");
+      setPayBalance("0.00");
+      setRawXlm(0);
+    }
+  };
 
   const handleFromAmountChange = (val: string) => {
     setFromAmount(val);
@@ -50,7 +68,7 @@ export default function SwapPage() {
   };
 
   const handleSetMax = () => {
-    const maxVal = Math.max(0, parseFloat(xlmBalance) - 2); // keep 2 XLM for reserve/fees
+    const maxVal = Math.max(0, rawXlm - 2); // keep 2 XLM reserve for fees
     handleFromAmountChange(maxVal.toString());
   };
 
@@ -70,13 +88,14 @@ export default function SwapPage() {
     setTxToast(null);
 
     try {
-      // Execute swap transaction feedback
       await new Promise((r) => setTimeout(r, 1600));
       const simulatedHash = "5f0446fb02899fae555148bd6a850e11cfb945339033b821054461fd73c9fcbf";
       setTxToast({
         msg: `Swapped ${fromAmount} XLM for ${toAmount} PAY successfully!`,
         hash: simulatedHash,
       });
+      // Refresh balances after swap
+      if (walletAddress) loadBalances(walletAddress);
     } catch (err) {
       console.error(err);
       setTxToast({ msg: "Swap transaction failed or rejected." });
@@ -87,7 +106,7 @@ export default function SwapPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between bg-bgPrimary">
-      <Navbar onWalletStateChange={setWalletAddress} />
+      <Navbar onWalletStateChange={handleWalletChange} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex flex-col items-center">
         {/* Page Title */}
@@ -108,7 +127,10 @@ export default function SwapPage() {
           <TrustlineNotice
             walletAddress={walletAddress}
             hasTrustline={hasTrustline}
-            onTrustlineEstablished={() => setHasTrustline(true)}
+            onTrustlineEstablished={() => {
+              setHasTrustline(true);
+              if (walletAddress) loadBalances(walletAddress);
+            }}
           />
         </div>
 
@@ -134,26 +156,6 @@ export default function SwapPage() {
 
         {/* Swap Card */}
         <div className="w-full max-w-md surface-card p-6 space-y-4 shadow-2xl relative">
-          <div className="flex items-center justify-between text-xs text-textSecondary border-b border-borderSubtle pb-3">
-            <span className="font-semibold text-textPrimary">Swap Parameters</span>
-            <div className="flex items-center gap-1 text-[11px]">
-              <span>Slippage:</span>
-              {[0.5, 1.0, 2.0].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSlippage(s)}
-                  className={`px-2 py-0.5 rounded ${
-                    slippage === s
-                      ? "bg-accentPrimary text-bgPrimary font-bold"
-                      : "bg-bgSurfaceHover text-textSecondary hover:text-textPrimary"
-                  }`}
-                >
-                  {s}%
-                </button>
-              ))}
-            </div>
-          </div>
-
           <form onSubmit={handleExecuteSwap} className="space-y-4">
             {/* From Asset (XLM) */}
             <div className="bg-bgPrimary/80 p-4 rounded-xl border border-borderSubtle space-y-2">
@@ -220,17 +222,9 @@ export default function SwapPage() {
             </div>
 
             {/* Exchange Rate Info */}
-            <div className="p-3 bg-bgSurfaceHover/50 rounded-xl border border-borderSubtle/50 space-y-1 text-xs">
-              <div className="flex justify-between text-textSecondary">
-                <span>Exchange Rate</span>
-                <span className="font-mono text-textPrimary font-semibold">1 XLM = 100 PAY</span>
-              </div>
-              <div className="flex justify-between text-textSecondary">
-                <span>Minimum Received</span>
-                <span className="font-mono text-textPrimary">
-                  {(parseFloat(toAmount || "0") * (1 - slippage / 100)).toFixed(2)} PAY
-                </span>
-              </div>
+            <div className="p-3 bg-bgSurfaceHover/50 rounded-xl border border-borderSubtle/50 text-xs flex justify-between text-textSecondary">
+              <span>Exchange Rate</span>
+              <span className="font-mono text-textPrimary font-semibold">1 XLM = 100 PAY</span>
             </div>
 
             {/* Execute Swap Button */}
