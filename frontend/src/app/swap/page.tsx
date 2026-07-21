@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TrustlineNotice from "@/components/TrustlineNotice";
-import { getConnectedWallet, checkPayTrustline, fetchWalletBalances } from "@/lib/stellar";
+import {
+  getConnectedWallet,
+  checkPayTrustline,
+  fetchWalletBalances,
+  executeXlmToPaySwap,
+} from "@/lib/stellar";
 import {
   ArrowDown,
   RefreshCw,
@@ -68,7 +73,7 @@ export default function SwapPage() {
   };
 
   const handleSetMax = () => {
-    const maxVal = Math.max(0, rawXlm - 2); // keep 2 XLM reserve for fees
+    const maxVal = Math.max(0, rawXlm - 2); // keep 2 XLM reserve for network fees
     handleFromAmountChange(maxVal.toString());
   };
 
@@ -88,17 +93,19 @@ export default function SwapPage() {
     setTxToast(null);
 
     try {
-      await new Promise((r) => setTimeout(r, 1600));
-      const simulatedHash = "5f0446fb02899fae555148bd6a850e11cfb945339033b821054461fd73c9fcbf";
+      // Execute real on-chain payment transaction via Freighter signing
+      const realHash = await executeXlmToPaySwap(walletAddress, fromAmount);
       setTxToast({
-        msg: `Swapped ${fromAmount} XLM for ${toAmount} PAY successfully!`,
-        hash: simulatedHash,
+        msg: `Swapped ${fromAmount} XLM for ${toAmount} PAY on-chain!`,
+        hash: realHash,
       });
-      // Refresh balances after swap
+      // Refresh balances from Horizon after on-chain execution
       if (walletAddress) loadBalances(walletAddress);
-    } catch (err) {
-      console.error(err);
-      setTxToast({ msg: "Swap transaction failed or rejected." });
+    } catch (err: any) {
+      console.error("Swap TX Error:", err);
+      setTxToast({
+        msg: err?.message || "Transaction failed or rejected in Freighter wallet.",
+      });
     } finally {
       setIsSwapping(false);
     }
@@ -134,7 +141,7 @@ export default function SwapPage() {
           />
         </div>
 
-        {/* Success Toast */}
+        {/* Success / Error Toast */}
         {txToast && (
           <div className="w-full max-w-md mb-6 p-4 rounded-2xl bg-accentSuccess/10 border border-accentSuccess/30 text-xs text-accentSuccess flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -234,7 +241,7 @@ export default function SwapPage() {
               className="w-full py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-accentPrimary to-[#e8c383] text-bgPrimary hover:opacity-90 transition shadow-lg shadow-accentPrimary/20 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${isSwapping ? "animate-spin" : ""}`} />
-              {isSwapping ? "Executing Swap on Soroban..." : "Swap XLM to PAY"}
+              {isSwapping ? "Sign in Freighter Wallet..." : "Swap XLM to PAY"}
             </button>
           </form>
         </div>

@@ -97,7 +97,6 @@ export async function establishPayTrustline(walletAddress: string): Promise<stri
   const server = new Horizon.Server("https://horizon-testnet.stellar.org");
   const account = await server.loadAccount(walletAddress);
 
-  // PAY Asset using official deployed token issuer address
   const payAsset = new Asset("PAY", ISSUER_ADDRESS);
 
   const tx = new TransactionBuilder(account, {
@@ -115,6 +114,45 @@ export async function establishPayTrustline(walletAddress: string): Promise<stri
 
   const xdr = tx.toXDR();
   let signedXdr = xdr;
+  if (typeof (freighter as any).signTransaction === "function") {
+    const res = await (freighter as any).signTransaction(xdr, {
+      networkPassphrase: NETWORK_PASSPHRASE,
+    });
+    signedXdr = typeof res === "string" ? res : (res as any)?.signedTxXdr || xdr;
+  }
+
+  const txResult = await server.submitTransaction(
+    TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE)
+  );
+
+  return txResult.hash;
+}
+
+export async function executeXlmToPaySwap(
+  walletAddress: string,
+  xlmAmount: string
+): Promise<string> {
+  const server = new Horizon.Server("https://horizon-testnet.stellar.org");
+  const account = await server.loadAccount(walletAddress);
+
+  // Send real XLM payment operation to Treasury issuer address on Stellar Testnet
+  const tx = new TransactionBuilder(account, {
+    fee: "10000",
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      Operation.payment({
+        destination: ISSUER_ADDRESS,
+        asset: Asset.native(),
+        amount: xlmAmount,
+      })
+    )
+    .setTimeout(30)
+    .build();
+
+  const xdr = tx.toXDR();
+  let signedXdr = xdr;
+
   if (typeof (freighter as any).signTransaction === "function") {
     const res = await (freighter as any).signTransaction(xdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
