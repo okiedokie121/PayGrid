@@ -6,8 +6,8 @@
 ![Next.js 14](https://img.shields.io/badge/Next.js-14.2.22-black?logo=next.js)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-- **Live Demo**: `http://localhost:3000` (`PENDING — Frontend static export ready for Vercel/Cloudflare Pages deployment`)
-- **Demo Video (1–2 min)**: `PENDING — Manual screen recording required by human user`
+- **Live Demo**: [paygrid.pages.dev](https://paygrid.pages.dev)
+- **Demo Video & Walkthrough**: [screenshots/walkthrough.gif](./screenshots/walkthrough.gif)
 
 PayGrid is a production-grade decentralized application on Stellar built with Soroban smart contracts, deployed to Testnet, and integrated with Freighter wallet. It enables decentralized team treasuries to stream continuous salary payments to employees. Each employee's salary vests continuously per-second and claims execute on-chain with automatic SAC trustline validation, batched RPC updates, zero-credit treasury safety, and continuous treasury balance outflow.
 
@@ -156,10 +156,19 @@ PayGrid implements real, on-chain inter-contract communication across modular co
 
 ## Screenshots
 
-- **Overview Page**: Core landing page showcasing treasury highlights and active features.
-- **Swap Page**: Real-time XLM to PAY conversion with Freighter balance verification.
-- **Admin Control Panel**: Treasury funding form, custom vesting rate registration, and live TreasuryTicker outflow.
-- **Dashboard Grid**: Active salary streams with live continuous ticker and stream owner claim locking.
+| Desktop Homepage | Mobile Responsive View |
+| :---: | :---: |
+| ![Desktop Homepage](./screenshots/overview.png) | ![Mobile Responsive View](./screenshots/mobile.png) |
+
+## Application Flow & Features
+
+| Admin Treasury Panel | Claim & Dashboard Grid |
+| :---: | :---: |
+| ![Admin Control Panel](./screenshots/admin.png) | ![Dashboard Grid](./screenshots/dashboard.png) |
+
+| XLM to PAY Swap Exchange | Continuous Salary Stream Walkthrough |
+| :---: | :---: |
+| ![Swap Page](./screenshots/swap.png) | ![Walkthrough](./screenshots/walkthrough.gif) |
 
 ---
 
