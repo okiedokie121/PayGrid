@@ -38,7 +38,7 @@ export default function AdminPanel() {
 
   const [selectedEmpId, setSelectedEmpId] = useState<number>(1);
   const [annualSalaryInput, setAnnualSalaryInput] = useState<string>("120000");
-  const [demoRateSelect, setDemoRateSelect] = useState<string>("10"); // 10 PAY/sec
+  const [streamRateInput, setStreamRateInput] = useState<string>("10"); // 10 PAY/sec
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);

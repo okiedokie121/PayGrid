@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Wallet, Shield, Layers, LayoutDashboard, ChevronRight } from "lucide-react";
+import { Wallet, Shield, Layers, LayoutDashboard, ChevronRight, RefreshCw } from "lucide-react";
 import { getConnectedWallet, checkFreighterConnected } from "@/lib/stellar";
 
 interface NavbarProps {
@@ -75,6 +75,13 @@ export default function Navbar({ onWalletStateChange, adminAddress }: NavbarProp
             className="px-4 py-1.5 rounded-lg text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-bgSurfaceHover transition"
           >
             Overview
+          </Link>
+          <Link
+            href="/swap"
+            className="px-4 py-1.5 rounded-lg text-sm font-medium text-textSecondary hover:text-textPrimary hover:bg-bgSurfaceHover transition flex items-center gap-1.5"
+          >
+            <RefreshCw className="w-4 h-4 text-accentPrimary" />
+            Swap
           </Link>
           <Link
             href="/admin"

@@ -12,21 +12,11 @@ import {
 } from "@/lib/stellar";
 import {
   formatPayAmount,
-  calculateClaimablePayout,
 } from "@/lib/math";
 import {
-  CONTRACT_TREASURY,
-  CONTRACT_EMPLOYEE_REGISTRY,
-  CONTRACT_PAY_TOKEN,
-} from "@/lib/constants";
-import {
   LayoutDashboard,
-  Wallet,
   CheckCircle2,
-  AlertCircle,
   PauseCircle,
-  PlayCircle,
-  Clock,
   ArrowUpRight,
   TrendingUp,
 } from "lucide-react";
@@ -47,7 +37,6 @@ export default function Dashboard() {
   const [hasTrustline, setHasTrustline] = useState<boolean>(true);
   const [claimingId, setClaimingId] = useState<number | null>(null);
   const [txToast, setTxToast] = useState<{ msg: string; hash?: string } | null>(null);
-  const [demoSpeedMode, setDemoSpeedMode] = useState<boolean>(true); // Demo-rate vs Real-rate toggle
 
   useEffect(() => {
     getConnectedWallet().then((addr) => {
@@ -59,17 +48,16 @@ export default function Dashboard() {
   }, []);
 
   // SWR Polling list_accrued() and treasury state every 3s
-  const { data: dashboardData, mutate, isLoading } = useSWR(
+  const { data: dashboardData, mutate } = useSWR(
     "dashboard_accrued_snapshot",
     async () => {
-      // Return representative active employee grid state
       const now = Math.floor(Date.now() / 1000);
       const employees: EmployeeCardData[] = [
         {
           id: 1,
           name: "Alice Vance",
           wallet: walletAddress || "GDIJJBF4L2CWMNMXRNECQPLFOHUTSEUPUDIAHBOA4X2ISUU7MTSHL7SN",
-          ratePerSecond: demoSpeedMode ? "25000000" : "38051", // 2.5 PAY/sec demo, ~$120k/yr real
+          ratePerSecond: "25000000", // 2.5 PAY/sec
           bankedAccrued: "150000000", // 15 PAY
           lastUpdate: now - 30,
           paused: false,
@@ -79,7 +67,7 @@ export default function Dashboard() {
           id: 2,
           name: "Bob Builder",
           wallet: "GBB3Y6OPO4WXYZEXAMPLEBOBADDRESS56CHARACTERSLONG02",
-          ratePerSecond: demoSpeedMode ? "50000000" : "28538", // 5.0 PAY/sec demo, ~$90k/yr real
+          ratePerSecond: "50000000", // 5.0 PAY/sec
           bankedAccrued: "420000000", // 42 PAY
           lastUpdate: now - 60,
           paused: false,
@@ -89,7 +77,7 @@ export default function Dashboard() {
           id: 3,
           name: "Carol Danvers",
           wallet: "GCA3Y6OPO4WXYZEXAMPLECAROLADDRESS56CHARACTERSLONG3",
-          ratePerSecond: demoSpeedMode ? "10000000" : "47564", // 1.0 PAY/sec demo, ~$150k/yr real
+          ratePerSecond: "10000000", // 1.0 PAY/sec
           bankedAccrued: "90000000", // 9 PAY
           lastUpdate: now - 120,
           paused: true, // Paused stream
@@ -123,7 +111,6 @@ export default function Dashboard() {
     setTxToast(null);
 
     try {
-      // Simulated or actual contract claim execution call
       await new Promise((r) => setTimeout(r, 1500));
       const simulatedHash = "8a2f4d89e17b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d";
       setTxToast({
@@ -158,33 +145,6 @@ export default function Dashboard() {
             <p className="text-xs text-textSecondary mt-1">
               Real-time independent employee salary tickers powered by Soroban smart contracts.
             </p>
-          </div>
-
-          {/* Demo Speed Toggle & Network Stats */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-bgSurface border border-borderSubtle p-1.5 rounded-xl text-xs">
-              <span className="text-textSecondary px-2">Ticker Speed:</span>
-              <button
-                onClick={() => setDemoSpeedMode(false)}
-                className={`px-3 py-1 rounded-lg font-medium transition ${
-                  !demoSpeedMode
-                    ? "bg-accentSecondary text-bgPrimary"
-                    : "text-textSecondary hover:text-textPrimary"
-                }`}
-              >
-                Realistic Salary
-              </button>
-              <button
-                onClick={() => setDemoSpeedMode(true)}
-                className={`px-3 py-1 rounded-lg font-medium transition ${
-                  demoSpeedMode
-                    ? "bg-accentPrimary text-bgPrimary font-bold"
-                    : "text-textSecondary hover:text-textPrimary"
-                }`}
-              >
-                Demo Fast (x1000)
-              </button>
-            </div>
           </div>
         </div>
 
