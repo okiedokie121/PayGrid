@@ -9,6 +9,8 @@ import TrustlineNotice from "@/components/TrustlineNotice";
 import {
   getConnectedWallet,
   checkPayTrustline,
+  getStoredEmployees,
+  StoredEmployee,
 } from "@/lib/stellar";
 import {
   LayoutDashboard,
@@ -16,17 +18,6 @@ import {
   PauseCircle,
   TrendingUp,
 } from "lucide-react";
-
-interface EmployeeCardData {
-  id: number;
-  name: string;
-  wallet: string;
-  ratePerSecond: string; // stroops
-  bankedAccrued: string; // stroops
-  lastUpdate: number;
-  paused: boolean;
-  active: boolean;
-}
 
 export default function Dashboard() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -43,19 +34,19 @@ export default function Dashboard() {
     });
   }, []);
 
-  // SWR Polling active employee streams from treasury contract
+  // SWR Polling active employee streams from persistent storage every 2s
   const { data: dashboardData, mutate } = useSWR(
     "dashboard_accrued_snapshot",
     async () => {
-      // Returns active streams registered on-chain
-      const employees: EmployeeCardData[] = [];
-      const treasuryBalanceStroops = 50000000000000n; // 5,000,000 PAY
+      const stored = getStoredEmployees();
+      const employees = stored.filter((emp) => emp.active);
+      const treasuryBalanceStroops = 50000000000000n;
       return { employees, treasuryBalanceStroops };
     },
-    { refreshInterval: 3000 }
+    { refreshInterval: 2000 }
   );
 
-  const handleClaim = async (emp: EmployeeCardData) => {
+  const handleClaim = async (emp: StoredEmployee) => {
     if (!walletAddress) {
       alert("Please connect Freighter wallet first.");
       return;
@@ -135,7 +126,7 @@ export default function Dashboard() {
         )}
 
         {/* Employee Cards Grid */}
-        {dashboardData?.employees.length === 0 ? (
+        {!dashboardData || dashboardData.employees.length === 0 ? (
           <div className="surface-card p-12 text-center space-y-3 max-w-md mx-auto my-12">
             <LayoutDashboard className="w-10 h-10 text-accentPrimary mx-auto opacity-60" />
             <h3 className="text-base font-bold text-textPrimary">No Active Salary Streams Found</h3>
@@ -145,7 +136,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dashboardData?.employees.map((emp) => {
+            {dashboardData.employees.map((emp) => {
               const isUserWallet =
                 walletAddress &&
                 walletAddress.toLowerCase() === emp.wallet.toLowerCase();

@@ -9,6 +9,11 @@ import {
   checkPayTrustline,
   getStoredTreasuryBalance,
   addStoredTreasuryBalance,
+  getStoredEmployees,
+  addStoredEmployee,
+  togglePauseStoredEmployee,
+  removeStoredEmployee,
+  StoredEmployee,
 } from "@/lib/stellar";
 import { formatPayAmount } from "@/lib/math";
 import {
@@ -22,15 +27,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-interface AdminEmployeeItem {
-  id: number;
-  name: string;
-  wallet: string;
-  ratePerSecond: string;
-  paused: boolean;
-  active: boolean;
-}
-
 export default function AdminPanel() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [hasTrustline, setHasTrustline] = useState<boolean>(true);
@@ -42,10 +38,11 @@ export default function AdminPanel() {
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);
 
   const [treasuryBalance, setTreasuryBalance] = useState<bigint>(0n);
-  const [employees, setEmployees] = useState<AdminEmployeeItem[]>([]);
+  const [employees, setEmployees] = useState<StoredEmployee[]>([]);
 
-  const refreshTreasuryBalance = () => {
+  const refreshState = () => {
     setTreasuryBalance(getStoredTreasuryBalance());
+    setEmployees(getStoredEmployees());
   };
 
   useEffect(() => {
@@ -55,7 +52,7 @@ export default function AdminPanel() {
         checkPayTrustline(addr).then((ok) => setHasTrustline(ok));
       }
     });
-    refreshTreasuryBalance();
+    refreshState();
   }, []);
 
   const handleFundTreasury = async (e: React.FormEvent) => {
@@ -86,18 +83,8 @@ export default function AdminPanel() {
     setToast(null);
     try {
       await new Promise((r) => setTimeout(r, 1200));
-      const newId = employees.length + 1;
-      setEmployees((prev) => [
-        ...prev,
-        {
-          id: newId,
-          name: newEmpName,
-          wallet: newEmpWallet,
-          ratePerSecond: "25000000", // 2.5 PAY/sec
-          paused: false,
-          active: true,
-        },
-      ]);
+      const updated = addStoredEmployee(newEmpName, newEmpWallet);
+      setEmployees(updated);
       setToast({
         msg: `Employee ${newEmpName} added to registry successfully!`,
         hash: "0bc21855c89de12d5f9127a3a41a7c6642b7db6db77334b5a63f985dde5ea3e3",
@@ -117,14 +104,11 @@ export default function AdminPanel() {
     setToast(null);
     try {
       await new Promise((r) => setTimeout(r, 1000));
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === empId ? { ...emp, paused: !emp.paused } : emp
-        )
-      );
-      const emp = employees.find((e) => e.id === empId);
+      const updated = togglePauseStoredEmployee(empId);
+      setEmployees(updated);
+      const emp = updated.find((e) => e.id === empId);
       setToast({
-        msg: `Stream ${emp?.paused ? "resumed" : "paused"} for ${emp?.name}!`,
+        msg: `Stream ${emp?.paused ? "paused" : "resumed"} for ${emp?.name}!`,
         hash: "2012c46a9795acd1d3acf70fb6638a7ec94befb397248630349d286b25432afb",
       });
     } catch (err) {
@@ -140,11 +124,8 @@ export default function AdminPanel() {
     setToast(null);
     try {
       await new Promise((r) => setTimeout(r, 1000));
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === empId ? { ...emp, active: false } : emp
-        )
-      );
+      const updated = removeStoredEmployee(empId);
+      setEmployees(updated);
       setToast({
         msg: `Employee ID ${empId} removed from active registry. Halts claims immediately.`,
       });

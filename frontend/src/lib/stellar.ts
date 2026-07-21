@@ -10,6 +10,67 @@ import {
   ISSUER_ADDRESS,
 } from "./constants";
 
+export interface StoredEmployee {
+  id: number;
+  name: string;
+  wallet: string;
+  ratePerSecond: string;
+  bankedAccrued: string;
+  lastUpdate: number;
+  paused: boolean;
+  active: boolean;
+}
+
+export function getStoredEmployees(): StoredEmployee[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem("paygrid_registered_employees");
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveStoredEmployees(employees: StoredEmployee[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("paygrid_registered_employees", JSON.stringify(employees));
+}
+
+export function addStoredEmployee(name: string, wallet: string): StoredEmployee[] {
+  const current = getStoredEmployees();
+  const newEmp: StoredEmployee = {
+    id: current.length + 1,
+    name,
+    wallet,
+    ratePerSecond: "25000000", // 2.5 PAY/sec
+    bankedAccrued: "0",
+    lastUpdate: Math.floor(Date.now() / 1000),
+    paused: false,
+    active: true,
+  };
+  const updated = [...current, newEmp];
+  saveStoredEmployees(updated);
+  return updated;
+}
+
+export function togglePauseStoredEmployee(id: number): StoredEmployee[] {
+  const current = getStoredEmployees();
+  const updated = current.map((emp) =>
+    emp.id === id ? { ...emp, paused: !emp.paused } : emp
+  );
+  saveStoredEmployees(updated);
+  return updated;
+}
+
+export function removeStoredEmployee(id: number): StoredEmployee[] {
+  const current = getStoredEmployees();
+  const updated = current.map((emp) =>
+    emp.id === id ? { ...emp, active: false } : emp
+  );
+  saveStoredEmployees(updated);
+  return updated;
+}
+
 export async function checkFreighterConnected(): Promise<boolean> {
   try {
     if (typeof freighter.isConnected === "function") {
