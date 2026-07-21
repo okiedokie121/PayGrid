@@ -36,7 +36,7 @@ export default function AdminPanel() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ msg: string; hash?: string } | null>(null);
 
-  const [treasuryBalance, setTreasuryBalance] = useState<bigint>(50000000000000n); // 5,000,000 PAY
+  const [treasuryBalance, setTreasuryBalance] = useState<bigint>(0n); // Starts at 0 PAY
   const [employees, setEmployees] = useState<AdminEmployeeItem[]>([]);
 
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function AdminPanel() {
                   disabled={isSubmitting}
                   className="w-full py-2.5 rounded-xl bg-gradient-to-r from-accentPrimary to-[#e8c383] text-bgPrimary font-semibold text-xs shadow-md hover:opacity-90 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Funding..." : "Fund Treasury (SAC Transfer)"}
+                  {isSubmitting ? "Funding..." : "Fund Treasury"}
                 </button>
               </form>
             </div>
@@ -264,7 +264,7 @@ export default function AdminPanel() {
                   disabled={isSubmitting || !newEmpName || !newEmpWallet}
                   className="w-full py-2.5 rounded-xl bg-accentSecondary text-bgPrimary font-semibold text-xs shadow-md hover:opacity-90 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Adding..." : "Add Employee (`add_employee`)"}
+                  {isSubmitting ? "Adding..." : "Add Employee"}
                 </button>
               </form>
             </div>
