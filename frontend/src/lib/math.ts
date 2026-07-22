@@ -38,9 +38,12 @@ export function computeLiveAccrued(
   rateStroops: bigint,
   lastUpdateSeconds: number,
   currentTimestampSeconds: number,
-  paused: boolean
+  paused: boolean,
+  treasuryBalanceStroops?: bigint
 ): bigint {
-  if (paused) return bankedStroops;
+  if (paused || (treasuryBalanceStroops !== undefined && treasuryBalanceStroops <= 0n)) {
+    return bankedStroops;
+  }
   const elapsed = Math.max(0, currentTimestampSeconds - lastUpdateSeconds);
   const newAccrual = BigInt(elapsed) * rateStroops;
   return bankedStroops + newAccrual;

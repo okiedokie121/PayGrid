@@ -8,6 +8,7 @@ interface TickerProps {
   rateStroops: bigint;
   lastUpdateSeconds: number;
   paused: boolean;
+  treasuryBalanceStroops?: bigint;
   decimals?: number;
 }
 
@@ -16,12 +17,18 @@ export default function Ticker({
   rateStroops,
   lastUpdateSeconds,
   paused,
+  treasuryBalanceStroops,
   decimals = 4,
 }: TickerProps) {
   const [currentStroops, setCurrentStroops] = useState<bigint>(bankedStroops);
 
   useEffect(() => {
-    if (paused || rateStroops === 0n) {
+    const isPaused =
+      paused ||
+      rateStroops === 0n ||
+      (treasuryBalanceStroops !== undefined && treasuryBalanceStroops <= 0n);
+
+    if (isPaused) {
       setCurrentStroops(bankedStroops);
       return;
     }
@@ -34,7 +41,7 @@ export default function Ticker({
     }, 100); // Ticks 10 times a second for smooth live animation
 
     return () => clearInterval(interval);
-  }, [bankedStroops, rateStroops, lastUpdateSeconds, paused]);
+  }, [bankedStroops, rateStroops, lastUpdateSeconds, paused, treasuryBalanceStroops]);
 
   return (
     <span className="font-mono tabular-nums text-accentPrimary font-bold">

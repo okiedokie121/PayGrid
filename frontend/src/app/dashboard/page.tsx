@@ -10,6 +10,7 @@ import {
   getConnectedWallet,
   checkPayTrustline,
   getStoredEmployees,
+  getStoredTreasuryBalance,
   StoredEmployee,
 } from "@/lib/stellar";
 import {
@@ -41,7 +42,7 @@ export default function Dashboard() {
     async () => {
       const stored = getStoredEmployees();
       const employees = stored.filter((emp) => emp.active);
-      const treasuryBalanceStroops = 50000000000000n;
+      const treasuryBalanceStroops = getStoredTreasuryBalance();
       return { employees, treasuryBalanceStroops };
     },
     { refreshInterval: 2000 }
@@ -148,7 +149,9 @@ export default function Dashboard() {
                 walletAddress &&
                 walletAddress.toLowerCase() === emp.wallet.toLowerCase();
 
-              const isClaimDisabled = claimingId === emp.id || emp.paused || !isUserWallet;
+              const isTreasuryEmpty = (dashboardData.treasuryBalanceStroops ?? 0n) <= 0n;
+              const isStreamPaused = emp.paused || isTreasuryEmpty;
+              const isClaimDisabled = claimingId === emp.id || isStreamPaused || !isUserWallet;
 
               const rateStroops = BigInt(emp.ratePerSecond);
               const bankedStroops = BigInt(emp.bankedAccrued);
@@ -182,6 +185,10 @@ export default function Dashboard() {
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentWarning/10 text-accentWarning border border-accentWarning/20 text-xs font-semibold">
                         <PauseCircle className="w-3.5 h-3.5" /> Paused
                       </span>
+                    ) : isTreasuryEmpty ? (
+                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentDanger/10 text-accentDanger border border-accentDanger/20 text-xs font-semibold">
+                        <PauseCircle className="w-3.5 h-3.5" /> Paused (0 PAY in Treasury)
+                      </span>
                     ) : (
                       <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accentSuccess/10 text-accentSuccess border border-accentSuccess/20 text-xs font-semibold">
                         <span className="w-2 h-2 rounded-full bg-accentSuccess animate-pulse" /> Stream Active
@@ -202,7 +209,8 @@ export default function Dashboard() {
                         bankedStroops={bankedStroops}
                         rateStroops={rateStroops}
                         lastUpdateSeconds={emp.lastUpdate}
-                        paused={emp.paused}
+                        paused={isStreamPaused}
+                        treasuryBalanceStroops={dashboardData.treasuryBalanceStroops}
                         decimals={4}
                       />{" "}
                       <span className="text-sm font-normal text-textSecondary">PAY</span>

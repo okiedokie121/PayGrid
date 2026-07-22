@@ -44,6 +44,15 @@ describe("Frontend Payroll Math & Accrual Engine", () => {
     expect(accrued).toBe(1000n);
   });
 
+  it("freezes accrual when treasury balance is 0 PAY", () => {
+    const banked = 1000n;
+    const rate = 100n;
+    const lastUpdate = 1000;
+    const now = 1050;
+    const accrued = computeLiveAccrued(banked, rate, lastUpdate, now, false, 0n);
+    expect(accrued).toBe(1000n);
+  });
+
   it("handles full claim when treasury balance is sufficient", () => {
     const accrued = 5000n;
     const treasuryBalance = 10000n;
